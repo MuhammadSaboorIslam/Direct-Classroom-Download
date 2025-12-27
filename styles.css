@@ -1,0 +1,91 @@
+/* Easy Download for Google Classroom - Styles */
+
+.easy-download-wrapper {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 10;
+}
+
+.easy-download-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #5f6368;
+  text-decoration: none;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 0;
+  outline: none;
+}
+
+.easy-download-btn:hover:not(:disabled) {
+  background: #1a73e8;
+  color: white;
+  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+  transform: translateY(-2px);
+  border-color: #1a73e8;
+}
+
+.easy-download-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(26, 115, 232, 0.3);
+}
+
+.easy-download-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.easy-download-btn.downloading {
+  background: #1a73e8;
+  color: white;
+  border-color: #1a73e8;
+}
+
+.easy-download-btn svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
+/* Loading spinner animation */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Ensure proper positioning context */
+.t2wIBc .r0VQac {
+  position: relative;
+}
+
+/* Add subtle animation on load */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.easy-download-btn {
+  animation: fadeInScale 0.3s ease;
+}
