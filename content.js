@@ -1,8 +1,11 @@
 // Easy Download for Google Classroom
 // Adds download buttons to all classroom attachments
 
+
 (function() {
   'use strict';
+  
+  const IDENTIFIERS = ['r0VQac','pOf0gc','Aopndd']
 
   // SVG icon for download button
   const downloadIconSVG = `
@@ -97,15 +100,23 @@
   }
 
   function addDownloadButtons() {
-    const attachments = document.getElementsByClassName('t2wIBc');
+    // Get all attachments using the IDENTIFIERS array
+    let attachments = [];
+    IDENTIFIERS.forEach(identifier => {
+      const elements = document.getElementsByClassName(identifier);
+      attachments = attachments.concat(Array.from(elements));
+    });
     
     let processedCount = 0;
 
-    Array.from(attachments).forEach((attachment) => {
+    attachments.forEach((attachment) => {
+      // Check if already processed and button still exists
       if (attachment.dataset.easyDownloadProcessed === 'true') {
-        if (attachment.querySelector('.easy-download-btn')) {
-          return;
+        const existingButton = attachment.querySelector('.easy-download-btn');
+        if (existingButton) {
+          return; // Button exists, skip
         } else {
+          // Button was removed, reprocess
           attachment.dataset.easyDownloadProcessed = 'false';
         }
       }
@@ -128,6 +139,7 @@
       const downloadUrl = createDownloadUrl(fileId);
       const downloadButton = createDownloadButton(downloadUrl, fileName);
 
+      // Find the card container to append the button
       const cardContainer = attachment.querySelector('.r0VQac');
       
       if (cardContainer) {
@@ -135,12 +147,23 @@
         buttonWrapper.className = 'easy-download-wrapper';
         buttonWrapper.appendChild(downloadButton);
         
+        // Ensure proper positioning
         cardContainer.style.position = 'relative';
         cardContainer.appendChild(buttonWrapper);
         
         attachment.dataset.easyDownloadProcessed = 'true';
         processedCount++;
-
+      } else {
+        // Fallback: append directly to attachment if cardContainer not found
+        const buttonWrapper = document.createElement('div');
+        buttonWrapper.className = 'easy-download-wrapper';
+        buttonWrapper.appendChild(downloadButton);
+        
+        attachment.style.position = 'relative';
+        attachment.appendChild(buttonWrapper);
+        
+        attachment.dataset.easyDownloadProcessed = 'true';
+        processedCount++;
       }
     });
     
@@ -186,20 +209,31 @@
               return;
             }
             
-            if (node.classList?.contains('t2wIBc') || 
-                node.querySelector?.('.t2wIBc')) {
+            // Check if node matches any identifier or contains any identifier
+            const matchesIdentifier = IDENTIFIERS.some(identifier => 
+              node.classList?.contains(identifier) || node.querySelector?.(`.${identifier}`)
+            );
+            
+            if (matchesIdentifier) {
               shouldProcess = true;
             }
           }
         });
       }
       
+      // Check if mutation target matches any identifier
       if (mutation.type === 'attributes' && 
-          mutation.target.classList?.contains('t2wIBc') &&
           !mutation.target.classList?.contains('easy-download-wrapper') &&
           !mutation.target.classList?.contains('easy-download-btn') &&
           mutation.attributeName !== 'data-easy-download-processed') {
-        shouldProcess = true;
+        
+        const targetMatchesIdentifier = IDENTIFIERS.some(identifier => 
+          mutation.target.classList?.contains(identifier)
+        );
+        
+        if (targetMatchesIdentifier) {
+          shouldProcess = true;
+        }
       }
     });
     
