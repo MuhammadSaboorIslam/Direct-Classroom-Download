@@ -17,7 +17,7 @@
   border-radius: 50%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s ease, background-color 0.3s ease;
   color: #5f6368;
   text-decoration: none;
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -57,7 +57,8 @@
 
 /* Loading spinner animation */
 .loading-spinner {
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
+  transform-origin: center;
 }
 
 @keyframes spin {

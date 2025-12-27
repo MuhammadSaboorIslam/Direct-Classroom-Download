@@ -15,65 +15,68 @@
 
   // SVG for loading spinner
   const loadingSpinnerSVG = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="loading-spinner">
-      <circle cx="12" cy="12" r="10"></circle>
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="loading-spinner">
+      <path d="M12 2 A10 10 0 0 1 22 12" opacity="1"></path>
+      <path d="M22 12 A10 10 0 0 1 12 22" opacity="0.3"></path>
+      <path d="M12 22 A10 10 0 0 1 2 12" opacity="0.1"></path>
     </svg>
   `;
 
-  // Extract file ID from Google Drive URL
   function extractFileId(url) {
     if (!url) return null;
     
-    // Match pattern: /file/d/{FILE_ID}/
     const match = url.match(/\/file\/d\/([^\/]+)\//);
     return match ? match[1] : null;
   }
 
-  // Convert view URL to download URL
   function createDownloadUrl(fileId) {
     return `https://drive.usercontent.google.com/u/0/uc?id=${fileId}&export=download`;
   }
 
-  // Download file directly using Chrome Downloads API
   async function downloadFile(url, fileName, button) {
     try {
-      // Show loading state
       button.classList.add('downloading');
       button.disabled = true;
       button.innerHTML = loadingSpinnerSVG;
 
-      // Use Chrome Downloads API to download without opening new tab
       chrome.runtime.sendMessage({
         action: 'download',
         url: url,
         filename: fileName
       }, (response) => {
-        // Reset button state
-        button.classList.remove('downloading');
-        button.disabled = false;
-        button.innerHTML = downloadIconSVG;
+        setTimeout(() => {
+          button.classList.remove('downloading');
+          button.disabled = false;
+          button.innerHTML = downloadIconSVG;
+        }, 800);
         
         if (response && response.error) {
           console.error('Download error:', response.error);
-          // Fallback to opening in new tab
-          window.open(url, '_blank');
+          button.style.background = '#ea4335';
+          setTimeout(() => {
+            button.style.background = '';
+          }, 2000);
+        } else if (response && response.success) {
+          button.style.background = '#34a853';
+          setTimeout(() => {
+            button.style.background = '';
+          }, 1500);
         }
       });
       
     } catch (error) {
       console.error('Download error:', error);
       
-      // Reset button state on error
       button.classList.remove('downloading');
       button.disabled = false;
       button.innerHTML = downloadIconSVG;
-      
-      // Fallback to opening in new tab
-      window.open(url, '_blank');
+      button.style.background = '#ea4335';
+      setTimeout(() => {
+        button.style.background = '';
+      }, 2000);
     }
   }
 
-  // Create download button element
   function createDownloadButton(downloadUrl, fileName) {
     const button = document.createElement('button');
     button.className = 'easy-download-btn';
@@ -81,7 +84,6 @@
     button.title = 'Download file';
     button.innerHTML = downloadIconSVG;
     
-    // Add click handler for direct download
     button.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -94,21 +96,20 @@
     return button;
   }
 
-  // Process all attachment elements
   function addDownloadButtons() {
     const attachments = document.getElementsByClassName('t2wIBc');
     
-    if (attachments.length === 0) {
-      return;
-    }
+    let processedCount = 0;
 
     Array.from(attachments).forEach((attachment) => {
-      // Skip if already processed
-      if (attachment.querySelector('.easy-download-btn')) {
-        return;
+      if (attachment.dataset.easyDownloadProcessed === 'true') {
+        if (attachment.querySelector('.easy-download-btn')) {
+          return;
+        } else {
+          attachment.dataset.easyDownloadProcessed = 'false';
+        }
       }
 
-      // Find the anchor tag with the file link
       const linkElement = attachment.querySelector('a.vwNuXe[href*="drive.google.com/file"]');
       
       if (!linkElement) {
@@ -127,23 +128,24 @@
       const downloadUrl = createDownloadUrl(fileId);
       const downloadButton = createDownloadButton(downloadUrl, fileName);
 
-      // Find the best place to insert the button
-      // Insert it in the top-right corner of the attachment card
       const cardContainer = attachment.querySelector('.r0VQac');
       
       if (cardContainer) {
-        // Create a wrapper for positioning
         const buttonWrapper = document.createElement('div');
         buttonWrapper.className = 'easy-download-wrapper';
         buttonWrapper.appendChild(downloadButton);
         
         cardContainer.style.position = 'relative';
         cardContainer.appendChild(buttonWrapper);
+        
+        attachment.dataset.easyDownloadProcessed = 'true';
+        processedCount++;
+
       }
     });
+    
   }
 
-  // Debounce function to avoid excessive processing
   let debounceTimer = null;
   function debounceAddButtons() {
     if (debounceTimer) {
@@ -154,17 +156,13 @@
     }, 300);
   }
 
-  // Initial run
   addDownloadButtons();
 
-  // Watch for URL changes (SPA navigation)
   let lastUrl = location.href;
   const urlObserver = new MutationObserver(() => {
     const currentUrl = location.href;
     if (currentUrl !== lastUrl) {
       lastUrl = currentUrl;
-      console.log('Easy Download: URL changed, re-scanning for attachments');
-      // Give the page time to load new content
       setTimeout(() => {
         addDownloadButtons();
       }, 500);
@@ -176,16 +174,18 @@
     subtree: true
   });
 
-  // Watch for dynamically loaded content
   const observer = new MutationObserver((mutations) => {
     let shouldProcess = false;
     
     mutations.forEach((mutation) => {
-      // Check if any added nodes contain or are attachment elements
       if (mutation.addedNodes.length > 0) {
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
-            // Check if the node itself or its children have the attachment class
+            if (node.classList?.contains('easy-download-wrapper') || 
+                node.classList?.contains('easy-download-btn')) {
+              return;
+            }
+            
             if (node.classList?.contains('t2wIBc') || 
                 node.querySelector?.('.t2wIBc')) {
               shouldProcess = true;
@@ -194,9 +194,11 @@
         });
       }
       
-      // Also check if attributes changed on attachment elements
       if (mutation.type === 'attributes' && 
-          mutation.target.classList?.contains('t2wIBc')) {
+          mutation.target.classList?.contains('t2wIBc') &&
+          !mutation.target.classList?.contains('easy-download-wrapper') &&
+          !mutation.target.classList?.contains('easy-download-btn') &&
+          mutation.attributeName !== 'data-easy-download-processed') {
         shouldProcess = true;
       }
     });
@@ -206,7 +208,6 @@
     }
   });
 
-  // Start observing with more comprehensive options
   observer.observe(document.body, {
     childList: true,
     subtree: true,
@@ -214,5 +215,4 @@
     attributeFilter: ['class', 'href']
   });
 
-  console.log('Easy Download for Google Classroom: Extension loaded');
 })();
