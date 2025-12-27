@@ -139,32 +139,16 @@
       const downloadUrl = createDownloadUrl(fileId);
       const downloadButton = createDownloadButton(downloadUrl, fileName);
 
-      // Find the card container to append the button
-      const cardContainer = attachment.querySelector('.r0VQac');
       
-      if (cardContainer) {
-        const buttonWrapper = document.createElement('div');
-        buttonWrapper.className = 'easy-download-wrapper';
-        buttonWrapper.appendChild(downloadButton);
-        
-        // Ensure proper positioning
-        cardContainer.style.position = 'relative';
-        cardContainer.appendChild(buttonWrapper);
-        
-        attachment.dataset.easyDownloadProcessed = 'true';
-        processedCount++;
-      } else {
-        // Fallback: append directly to attachment if cardContainer not found
-        const buttonWrapper = document.createElement('div');
-        buttonWrapper.className = 'easy-download-wrapper';
-        buttonWrapper.appendChild(downloadButton);
-        
-        attachment.style.position = 'relative';
-        attachment.appendChild(buttonWrapper);
-        
-        attachment.dataset.easyDownloadProcessed = 'true';
-        processedCount++;
-      }
+      const buttonWrapper = document.createElement('div');
+      buttonWrapper.className = 'easy-download-wrapper';
+      buttonWrapper.appendChild(downloadButton);
+      
+      attachment.style.position = 'relative';
+      attachment.appendChild(buttonWrapper);
+      
+      attachment.dataset.easyDownloadProcessed = 'true';
+      processedCount++;
     });
     
   }
