@@ -34,7 +34,7 @@
     return `https://drive.usercontent.google.com/u/0/uc?id=${fileId}&export=download`;
   }
 
-  // Download file directly using fetch
+  // Download file directly using Chrome Downloads API
   async function downloadFile(url, fileName, button) {
     try {
       // Show loading state
@@ -42,32 +42,23 @@
       button.disabled = true;
       button.innerHTML = loadingSpinnerSVG;
 
-      // Fetch the file
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error('Download failed');
-      }
-
-      // Get the blob
-      const blob = await response.blob();
-      
-      // Create a temporary download link
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      
-      // Cleanup
-      window.URL.revokeObjectURL(downloadUrl);
-      document.body.removeChild(a);
-
-      // Reset button state
-      button.classList.remove('downloading');
-      button.disabled = false;
-      button.innerHTML = downloadIconSVG;
+      // Use Chrome Downloads API to download without opening new tab
+      chrome.runtime.sendMessage({
+        action: 'download',
+        url: url,
+        filename: fileName
+      }, (response) => {
+        // Reset button state
+        button.classList.remove('downloading');
+        button.disabled = false;
+        button.innerHTML = downloadIconSVG;
+        
+        if (response && response.error) {
+          console.error('Download error:', response.error);
+          // Fallback to opening in new tab
+          window.open(url, '_blank');
+        }
+      });
       
     } catch (error) {
       console.error('Download error:', error);

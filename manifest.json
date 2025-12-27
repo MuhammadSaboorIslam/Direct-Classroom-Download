@@ -3,10 +3,17 @@
   "name": "Easy Download for Google Classroom",
   "version": "1.0.0",
   "description": "Add download buttons to Google Classroom attachments for quick and easy file downloads",
-  "permissions": [],
-  "host_permissions": [
-    "https://classroom.google.com/*"
+  "permissions": [
+    "downloads"
   ],
+  "host_permissions": [
+    "https://classroom.google.com/*",
+    "https://drive.google.com/*",
+    "https://drive.usercontent.google.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": ["https://classroom.google.com/*"],
