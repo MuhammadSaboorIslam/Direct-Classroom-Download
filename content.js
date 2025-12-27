@@ -143,28 +143,75 @@
     });
   }
 
+  // Debounce function to avoid excessive processing
+  let debounceTimer = null;
+  function debounceAddButtons() {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+    debounceTimer = setTimeout(() => {
+      addDownloadButtons();
+    }, 300);
+  }
+
   // Initial run
   addDownloadButtons();
+
+  // Watch for URL changes (SPA navigation)
+  let lastUrl = location.href;
+  const urlObserver = new MutationObserver(() => {
+    const currentUrl = location.href;
+    if (currentUrl !== lastUrl) {
+      lastUrl = currentUrl;
+      console.log('Easy Download: URL changed, re-scanning for attachments');
+      // Give the page time to load new content
+      setTimeout(() => {
+        addDownloadButtons();
+      }, 500);
+    }
+  });
+
+  urlObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
 
   // Watch for dynamically loaded content
   const observer = new MutationObserver((mutations) => {
     let shouldProcess = false;
     
     mutations.forEach((mutation) => {
+      // Check if any added nodes contain or are attachment elements
       if (mutation.addedNodes.length > 0) {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            // Check if the node itself or its children have the attachment class
+            if (node.classList?.contains('t2wIBc') || 
+                node.querySelector?.('.t2wIBc')) {
+              shouldProcess = true;
+            }
+          }
+        });
+      }
+      
+      // Also check if attributes changed on attachment elements
+      if (mutation.type === 'attributes' && 
+          mutation.target.classList?.contains('t2wIBc')) {
         shouldProcess = true;
       }
     });
     
     if (shouldProcess) {
-      addDownloadButtons();
+      debounceAddButtons();
     }
   });
 
-  // Start observing
+  // Start observing with more comprehensive options
   observer.observe(document.body, {
     childList: true,
-    subtree: true
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class', 'href']
   });
 
   console.log('Easy Download for Google Classroom: Extension loaded');
